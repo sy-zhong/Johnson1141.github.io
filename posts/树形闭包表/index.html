@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noodp" />
+    <title class="pjax-title">树形闭包表 - SYZhong</title><meta name="Description" content="SYZhong&#39;s blog"><meta property="og:title" content="树形闭包表" />
+<meta property="og:description" content="
+    0.1 引入在关系型数据库中描述树 —— 闭包表
+
+掌握一个数据模型需要花费很多精力（想想关系数据建模有多少本书）。即便只使用一个数据模型，不用操心其内部工作机制，构建软件也是非常困难的。然而，因为数据模型对上层软件的功能（能做什么，不能做什么）有着至深的影响，所以选择一个适合的数据模型是非常重要的。
+——DDIA
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.syzhong.com/posts/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-08-12T00:00:00+00:00" />
+<meta property="article:modified_time" content="2022-10-26T00:00:00+00:00" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="树形闭包表"/>
+<meta name="twitter:description" content="
+    0.1 引入在关系型数据库中描述树 —— 闭包表
+
+掌握一个数据模型需要花费很多精力（想想关系数据建模有多少本书）。即便只使用一个数据模型，不用操心其内部工作机制，构建软件也是非常困难的。然而，因为数据模型对上层软件的功能（能做什么，不能做什么）有着至深的影响，所以选择一个适合的数据模型是非常重要的。
+——DDIA
+"/>
+<meta name="application-name" content="SYZhong">
+<meta name="apple-mobile-web-app-title" content="SYZhong">
+
+<meta name="theme-color" content="#f8f8f8"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="canonical" href="https://blog.syzhong.com/posts/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8/" /><link rel="prev" href="https://blog.syzhong.com/posts/antlr4/" /><link rel="next" href="https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A13mvcc%E4%B8%8Einnodb%E9%94%81%E6%9C%BA%E5%88%B6/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="/lib/fontawesome-free/all.min.css">
+        <noscript><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"></noscript><link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="/lib/animate/animate.min.css">
+        <noscript><link rel="stylesheet" href="/lib/animate/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "树形闭包表",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/blog.syzhong.com\/posts\/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  1463 ,
+        "url": "https:\/\/blog.syzhong.com\/posts\/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8\/","datePublished": "2021-08-12T00:00:00+00:00","dateModified": "2022-10-26T00:00:00+00:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+            "@type": "Organization",
+            "name": "s"},"author": {
+                "@type": "Person",
+                "name": "s"
+            },"description": ""
+    }
+    </script></head>
+
+<body header-desktop="" header-mobile=""><script type="text/javascript">
+        function setTheme(theme) {document.body.setAttribute('theme', theme); document.documentElement.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark');}
+        function saveTheme(theme) {window.localStorage && localStorage.setItem('theme', theme);}
+        function getMeta(metaName) {const metas = document.getElementsByTagName('meta'); for (let i = 0; i < metas.length; i++) if (metas[i].getAttribute('name') === metaName) return metas[i]; return '';}
+        if (window.localStorage && localStorage.getItem('theme')) {let theme = localStorage.getItem('theme');theme === 'light' || theme === 'dark' || theme === 'black' ? setTheme(theme) : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? setTheme('dark') : setTheme('light')); } else { if ('' === 'light' || '' === 'dark' || '' === 'black') setTheme(''), saveTheme(''); else saveTheme('auto'), window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? setTheme('dark') : setTheme('light');}
+        let metaColors = {'light': '#f8f8f8','dark': '#252627','black': '#000000'}
+        getMeta('theme-color').content = metaColors[document.body.getAttribute('theme')];
+    </script>
+    <div id="back-to-top"></div>
+    <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="SYZhong">SYZhong</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 归档 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/about/" title="关于"> 关于 </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="#" onclick="return false;" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="#" onclick="return false;" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="#" onclick="return false;" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="SYZhong">SYZhong</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="#" onclick="return false;" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="#" onclick="return false;" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="#" onclick="return false;" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">归档</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/about/" title="关于">关于</a><a href="#" onclick="return false;" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+            <div class="container"><div class="toc" id="toc-auto">
+        <h2 class="toc-title">目录</h2>
+        <div class="toc-content" id="toc-content-auto"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#引入">引入</a></li>
+        <li><a href="#查询子节点">查询子节点</a></li>
+        <li><a href="#查询父路径">查询父路径</a></li>
+        <li><a href="#写入">写入</a></li>
+        <li><a href="#删除自身以及子树">删除自身以及子树</a></li>
+        <li><a href="#移动节点">移动节点</a></li>
+        <li><a href="#case">case</a>
+          <ul>
+            <li><a href="#场景1">场景1</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+    </div><script>document.getElementsByTagName("main")[0].setAttribute("pageStyle", "normal")</script><script>document.getElementsByTagName("main")[0].setAttribute("autoTOC", "true")</script><article class="page single"><h1 class="single-title animate__animated animate__flipInX">树形闭包表</h1><div class="post-meta">
+            <div class="post-meta-line">&nbsp;<span class="post-category">收录于 </span>&nbsp;<span class="post-category">类别 <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"><i class="far fa-folder fa-fw"></i>数据库</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-08-12">2021-08-12</time>&nbsp;<i class="far fa-edit fa-fw"></i>&nbsp;<time datetime="2022-10-26">2022-10-26</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 1463 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 3 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#引入">引入</a></li>
+        <li><a href="#查询子节点">查询子节点</a></li>
+        <li><a href="#查询父路径">查询父路径</a></li>
+        <li><a href="#写入">写入</a></li>
+        <li><a href="#删除自身以及子树">删除自身以及子树</a></li>
+        <li><a href="#移动节点">移动节点</a></li>
+        <li><a href="#case">case</a>
+          <ul>
+            <li><a href="#场景1">场景1</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h3 id="引入" class="headerLink">
+    <a href="#%e5%bc%95%e5%85%a5" class="header-mark"></a>0.1 引入</h3><p>在关系型数据库中描述树 —— 闭包表</p>
+<blockquote>
+<p>掌握一个数据模型需要花费很多精力（想想关系数据建模有多少本书）。即便只使用一个数据模型，不用操心其内部工作机制，构建软件也是非常困难的。然而，因为数据模型对上层软件的功能（能做什么，不能做什么）有着至深的影响，所以选择一个适合的数据模型是非常重要的。
+——DDIA</p>
+</blockquote>
+<p><code>树</code>这种数据结构在程序运行中十分常见，许多场景都挺适合在内存中构建一颗树去描述、解决问题（组织架构，目录，分类等等），那么在数据库这层上，如何舒服的存储和读取树形结构就会是一个问题。一般常见的会有两种存储方式：<code>关系型存储</code> 和 <code>文档存储</code>。两种方式各有优劣，还是得根据场景去选择合适的数据模型。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>关系模型</th>
+<th>文档模型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>优势</strong></td>
+<td>事务支持好、更新和写入可以只修改要修改的数据</td>
+<td>数据描述自然，查询一整课树快速方便；</td>
+</tr>
+<tr>
+<td><strong>劣势</strong></td>
+<td>给出一棵树需要不停查询、拼接，单条数据脏了会影响整颗树</td>
+<td>局部更新和查询麻烦，需要拿到整棵树的信息，性能和潜在的并发问题，事务支持差</td>
+</tr>
+</tbody>
+</table>
+<p>下面要描述的是关系型存储中的一种,闭包表存储。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">Table</span><span class="w"> </span><span class="s2">&#34;t_tree_path&#34;</span><span class="w"> </span><span class="err">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="s2">&#34;code&#34;</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="p">[</span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">default</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;0&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">note</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;前台类目code&#39;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="s2">&#34;ancestor_code&#34;</span><span class="w"> </span><span class="nb">bigint</span><span class="w"> </span><span class="p">[</span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">default</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;0&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">note</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;前台类目的祖先code&#39;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="s2">&#34;level&#34;</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="p">[</span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">default</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;1&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">note</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;code与其祖先code距离&#39;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">Indexes</span><span class="w"> </span><span class="err">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">(</span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="n">ancestor_code</span><span class="p">)</span><span class="w"> </span><span class="p">[</span><span class="k">unique</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;code_parent&#34;</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="err">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="err">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>上述是一个闭包表的常见存储结构,存储每个节点及其祖先节点,举个例子的话</p>
+<div class="mermaid" id="id-1"></div><p>那么此时表中数据，以d为例就是</p>
+<table>
+<thead>
+<tr>
+<th>code</th>
+<th>ancestor_code</th>
+<th>level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>d</td>
+<td>d</td>
+<td>1</td>
+</tr>
+<tr>
+<td>d</td>
+<td>b</td>
+<td>2</td>
+</tr>
+<tr>
+<td>d</td>
+<td>a</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<p>而完整数据就会是</p>
+<table>
+<thead>
+<tr>
+<th>code</th>
+<th>ancestor_code</th>
+<th>level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a</td>
+<td>a</td>
+<td>1</td>
+</tr>
+<tr>
+<td>b</td>
+<td>b</td>
+<td>1</td>
+</tr>
+<tr>
+<td>b</td>
+<td>a</td>
+<td>2</td>
+</tr>
+<tr>
+<td>c</td>
+<td>c</td>
+<td>1</td>
+</tr>
+<tr>
+<td>c</td>
+<td>a</td>
+<td>2</td>
+</tr>
+<tr>
+<td>d</td>
+<td>d</td>
+<td>1</td>
+</tr>
+<tr>
+<td>d</td>
+<td>b</td>
+<td>2</td>
+</tr>
+<tr>
+<td>d</td>
+<td>a</td>
+<td>3</td>
+</tr>
+<tr>
+<td>e</td>
+<td>e</td>
+<td>1</td>
+</tr>
+<tr>
+<td>e</td>
+<td>b</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e</td>
+<td>a</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<p>可以看到相对于只存储parent而言，这种存储方式会存储大量的祖先节点信息，但是后面会看到，在查询方面，可以相对于只存储parent，查询需要多次数据库请求与连接而言，使用这种方式，大部分操作可以在一次请求中完成。</p>
+<h3 id="查询子节点" class="headerLink">
+    <a href="#%e6%9f%a5%e8%af%a2%e5%ad%90%e8%8a%82%e7%82%b9" class="header-mark"></a>0.2 查询子节点</h3><p>要查询某的所有子节点，只需要</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">path</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">path</span><span class="p">.</span><span class="n">ancestor_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>在内存中在聚合</p>
+<h3 id="查询父路径" class="headerLink">
+    <a href="#%e6%9f%a5%e8%af%a2%e7%88%b6%e8%b7%af%e5%be%84" class="header-mark"></a>0.3 查询父路径</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">path</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">where</span><span class="w"> </span><span class="n">path</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="写入" class="headerLink">
+    <a href="#%e5%86%99%e5%85%a5" class="header-mark"></a>0.4 写入</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">t_tree_path</span><span class="p">(</span><span class="n">code</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="k">level</span><span class="p">)</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="p">,</span><span class="n">t</span><span class="p">.</span><span class="n">ancestor_code</span><span class="p">,</span><span class="n">t</span><span class="p">.</span><span class="k">level</span><span class="o">+</span><span class="mi">1</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">t</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">code</span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">parent</span><span class="err">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">UNION</span><span class="w"> </span><span class="k">ALL</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="p">,</span><span class="o">#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="p">,</span><span class="mi">1</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>写入一个节点，只需要加边即可</p>
+<div class="mermaid" id="id-2"></div><p>若是要在b下加上c，需要加上虚线：所有祖先节点关联数据+自己的关联数据。</p>
+<h3 id="删除自身以及子树" class="headerLink">
+    <a href="#%e5%88%a0%e9%99%a4%e8%87%aa%e8%ba%ab%e4%bb%a5%e5%8f%8a%e5%ad%90%e6%a0%91" class="header-mark"></a>0.5 删除自身以及子树</h3><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">DELETE</span><span class="w"> </span><span class="k">FROM</span><span class="w">  </span><span class="n">t_tree_path</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">WHERE</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">IN</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">(</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="n">code</span><span class="w">  
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">WHERE</span><span class="w"> </span><span class="n">ancestor_code</span><span class="w"> </span><span class="o">=#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="w"> </span><span class="p">)</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>1.查询所有a节点的子节点
+2.删除以子节点code 为 code的所有闭包集，所以需要两次查询</p>
+<p>优化写法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">DELETE</span><span class="w"> </span><span class="n">o</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">o</span><span class="w"> </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">m_code</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">m_ancestor_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">code</span><span class="err">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">m_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">m_code</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="移动节点" class="headerLink">
+    <a href="#%e7%a7%bb%e5%8a%a8%e8%8a%82%e7%82%b9" class="header-mark"></a>0.6 移动节点</h3><div class="mermaid" id="id-3"></div><p>把b转移到c下面</p>
+<ol>
+<li>断开部分关联数据</li>
+</ol>
+<div class="mermaid" id="id-4"></div><ol start="2">
+<li>关联新父级</li>
+</ol>
+<div class="mermaid" id="id-5"></div><p>第一步，先断开父级关系</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">DELETE</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w">  
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">WHERE</span><span class="w"> </span><span class="n">ancestor_code</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">ancestor_code</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w">  
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">originCode</span><span class="err">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">ancestor_code</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">originCode</span><span class="err">}</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">IN</span><span class="w">  </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w">  </span><span class="k">WHERE</span><span class="w"> </span><span class="n">ancestor_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">originCode</span><span class="err">}</span><span class="p">)</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> 
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>挑选满足特定条件的code，ancestor_code元祖</p>
+<ol>
+<li>code 是 originCode及其子集的code</li>
+<li>parent 是 originCode的祖先节点（不包括originCode）</li>
+</ol>
+<p>第二步，将子集关联</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w"> </span><span class="p">(</span><span class="n">code</span><span class="p">,</span><span class="n">ancestor_code</span><span class="p">)</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">SELECT</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">p</span><span class="p">.</span><span class="n">ancestor_code</span><span class="p">,</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">code</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">FROM</span><span class="w">  </span><span class="n">t_tree_path</span><span class="w">  </span><span class="n">p</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CROSS</span><span class="w"> </span><span class="k">JOIN</span><span class="w"> </span><span class="n">t_tree_path</span><span class="w">  </span><span class="n">s</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">WHERE</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">targetCode</span><span class="err">}</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">AND</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">ancestor_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">#</span><span class="err">{</span><span class="n">originCode</span><span class="err">}</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>挑选满足条件的两个集合做笛卡尔乘积<br>
+左:  祖先为原code的元祖中的 <code>code</code><br>
+右:  code为targetCode的祖先code</p>
+<h3 id="case" class="headerLink">
+    <a href="#case" class="header-mark"></a>0.7 case</h3><h4 id="场景1" class="headerLink">
+    <a href="#%e5%9c%ba%e6%99%af1" class="header-mark"></a>0.7.1 场景1</h4><p>曾经在一个项目中使用过此结构来优化上下级关系，但数据是<code>外部的，只读的</code>，且通过<code>qmq消息同步</code>。</p>
+<p>在更新的时候，由于消息发送无序且消费过程中是并发的，导致两条相近create操作，因为下级先至，
+上级后至，在更新这张辅助表时，没有正确插入，导致后续查询问题。</p>
+<p>之前不会出现问题是因为项目之前没有做一致性(父级code必须存在)的校验，无脑同步数据。</p>
+<p>虽然出现这个问题不是闭包表本身的问题，但是在使用时要考虑是否当前场景能否保证较的强一致性。</p></div>
+
+        <div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2022-10-26</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span><a class="link-to-mardown" href=/posts/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8/index.md target="_blank" rel="noopener noreferrer">阅读原始文档</a>
+                    </span></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/antlr4/" class="prev" rel="prev" title=""><i class="fas fa-angle-left fa-fw"></i></a>
+            <a href="/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A13mvcc%E4%B8%8Einnodb%E9%94%81%E6%9C%BA%E5%88%B6/" class="next" rel="next" title="数据库事务3(mvcc与innodb锁机制)">数据库事务3(mvcc与innodb锁机制)<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+        </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">
+                    由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreferrer" title="Hugo 0.111.3">Hugo</a> 强力驱动&nbsp;|&nbsp;主题 - <a href="https://github.com/HEIGE-PCloud/DoIt" target="_blank" rel="noopener noreferrer" title="DoIt 0.2.13"><i class="far fa-edit fa-fw"></i> DoIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2024</span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span></div>
+            <div class="footer-line"></div>
+            <div class="footer-line">
+            </div>
+        </div></footer></div>
+
+    <div id="fixed-buttons"><a href="#back-to-top" id="back-to-top-button" class="fixed-button" title="回到顶部">
+            <i class="fas fa-arrow-up fa-fw"></i>
+        </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+            <i class="fas fa-comment fa-fw"></i>
+        </a>
+    </div><div class="assets"><script type="text/javascript" src="/lib/autocomplete/autocomplete.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/tablesort/tablesort.min.js"></script><script type="text/javascript" src="/lib/topbar/topbar.min.js"></script><script type="text/javascript" src="/lib/pjax/pjax.min.js"></script><script type="text/javascript" src="/js/theme.min.js" defer></script></div>
+
+<div class="pjax-assets"><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":20},"comment":{},"data":{"id-1":"graph TB\na(a) --\u003e b(b)\na --\u003e c(c)\nb --\u003e d(d)\nb --\u003e e(e)","id-2":"graph TB\na(a) --\u003e b(b)\nb --\u003e d(d)\na -..-\u003e c(c)\nb -..-\u003e c\nc -..-\u003e c","id-3":"graph TB\na --\u003e c(c)\na(a) --\u003e b(b)\nb --\u003e d(d)\nb --\u003e e(e)","id-4":"graph TB\na(a) -..- b(b)\na -..- d\na -..- e\nb --\u003e d(d)\nb --\u003e e(e)\na --\u003e c(c)","id-5":"graph TB\na(a) -..- b(b)\nc -..- b\nc -..- d\nc -..- e\nb --\u003e d(d)\nb --\u003e e(e)\na -..- d(d)\na -..- e(e)\na --\u003e c(c)"},"mermaid":true,"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":50,"type":"lunr"},"table":{"sort":true}};</script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript" src="/lib/mermaid/mermaid.min.js" defer></script><script type="text/javascript" src="/js/mermaid.min.js" defer></script><link rel="stylesheet" href="/lib/mermaid/mermaid.min.css"></div>
+</body>
+
+</html>

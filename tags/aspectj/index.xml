@@ -1,0 +1,14 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>AspectJ - 标签 - SYZhong</title>
+        <link>https://blog.syzhong.com/tags/aspectj/</link>
+        <description>AspectJ - 标签 - SYZhong</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 12 Sep 2021 16:01:23 &#43;0800</lastBuildDate><atom:link href="https://blog.syzhong.com/tags/aspectj/" rel="self" type="application/rss+xml" /><item>
+    <title>Java异常与错误机制</title>
+    <link>https://blog.syzhong.com/posts/java%E5%BC%82%E5%B8%B8/</link>
+    <pubDate>Sun, 12 Sep 2021 16:01:23 &#43;0800</pubDate><author>
+        <name>s</name>
+    </author><guid>https://blog.syzhong.com/posts/java%E5%BC%82%E5%B8%B8/</guid>
+    <description><![CDATA[Java异常与错误机制 1 引入程序运行时随时会发生异常，有些是可预料到的，比如获取列表中第二个值，可能整个列表长度都没有2，有些是运行过程中随]]></description>
+</item></channel>
+</rss>

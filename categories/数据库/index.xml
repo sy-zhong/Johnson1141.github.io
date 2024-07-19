@@ -1,0 +1,47 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>数据库 - 分类 - SYZhong</title>
+        <link>https://blog.syzhong.com/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/</link>
+        <description>数据库 - 分类 - SYZhong</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Thu, 12 Aug 2021 16:01:23 &#43;0800</lastBuildDate><atom:link href="https://blog.syzhong.com/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="self" type="application/rss+xml" /><item>
+    <title>数据库事务1(引入)</title>
+    <link>https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A11%E7%AE%80%E4%BB%8B/</link>
+    <pubDate>Thu, 12 Aug 2021 16:01:23 &#43;0800</pubDate><author>
+        <name>s</name>
+    </author><guid>https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A11%E7%AE%80%E4%BB%8B/</guid>
+    <description><![CDATA[<h2 id="引入" class="headerLink">
+    <a href="#%e5%bc%95%e5%85%a5" class="header-mark"></a>1 引入</h2><p>“魔鬼隐藏在细节中。”</p>
+<p>数据库事务为了什么？
+为了容错和并发问题。</p>
+<p>应用程序会遇到各种各样的错误：</p>
+<ol>
+<li>机器挂了，数据库ip变了，内存爆了等等天灾人祸以及潜在的网络风险，机器运行风险导致 数据库的crud做到一半，但是没有做完。</li>
+</ol>]]></description>
+</item><item>
+    <title>数据库事务2(redo,undo)</title>
+    <link>https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A12redoundo/</link>
+    <pubDate>Thu, 12 Aug 2021 16:01:23 &#43;0800</pubDate><author>
+        <name>s</name>
+    </author><guid>https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A12redoundo/</guid>
+    <description><![CDATA[Q innodb是如何实现原子性的？ 数据库（mysql）为什么会出现持久性的困扰？ innodb是如何保证持久性的？ 1 背景事务的特性：ACID]]></description>
+</item><item>
+    <title>数据库事务3(mvcc与innodb锁机制)</title>
+    <link>https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A13mvcc%E4%B8%8Einnodb%E9%94%81%E6%9C%BA%E5%88%B6/</link>
+    <pubDate>Thu, 12 Aug 2021 16:01:23 &#43;0800</pubDate><author>
+        <name>s</name>
+    </author><guid>https://blog.syzhong.com/posts/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A13mvcc%E4%B8%8Einnodb%E9%94%81%E6%9C%BA%E5%88%B6/</guid>
+    <description><![CDATA[带着问题思考。 Q: 读写，写写冲突，或者说基本的dml操作 insert，update，delete，select，innodb存储引擎是如何处理]]></description>
+</item><item>
+    <title>树形闭包表</title>
+    <link>https://blog.syzhong.com/posts/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8/</link>
+    <pubDate>Thu, 12 Aug 2021 00:00:00 &#43;0000</pubDate><author>
+        <name>s</name>
+    </author><guid>https://blog.syzhong.com/posts/%E6%A0%91%E5%BD%A2%E9%97%AD%E5%8C%85%E8%A1%A8/</guid>
+    <description><![CDATA[<h3 id="引入" class="headerLink">
+    <a href="#%e5%bc%95%e5%85%a5" class="header-mark"></a>0.1 引入</h3><p>在关系型数据库中描述树 —— 闭包表</p>
+<blockquote>
+<p>掌握一个数据模型需要花费很多精力（想想关系数据建模有多少本书）。即便只使用一个数据模型，不用操心其内部工作机制，构建软件也是非常困难的。然而，因为数据模型对上层软件的功能（能做什么，不能做什么）有着至深的影响，所以选择一个适合的数据模型是非常重要的。
+——DDIA</p>
+</blockquote>]]></description>
+</item></channel>
+</rss>
